@@ -7,24 +7,24 @@ export class Character {
   }
 
   async create (spriteURL, x, y, scale, anchor){
-    this.player = await PIXI.Sprite.from(spriteURL);
-    this.player.anchor.set(anchor);
-    this.player.scale.set(scale);
+    this.obj = await PIXI.Sprite.from(spriteURL);
+    this.obj.anchor.set(anchor);
+    this.obj.scale.set(scale);
     
-    this.player.x = x;
-    this.player.y = y;
+    this.obj.x = x;
+    this.obj.y = y;
 
-    startGame.app.stage.addChild(this.player);
+    startGame.app.stage.addChild(this.obj);
   }
 
   move(x, y, speed, cb = () => {}) {
     startGame.app.ticker.add((delta) => {
-      if (Math.abs(this.player.x - x) > 0.01) {
-        this.player.x += delta * speed;
+      if (Math.abs(this.obj.x - x) > 0.01) {
+        this.obj.x += delta * speed;
       }
 
-      if (Math.abs(this.player.y - y) > 0.01) {
-        this.player.y += delta * speed;
+      if (Math.abs(this.obj.y - y) > 0.01) {
+        this.obj.y += delta * speed;
       }
       
     cb();
