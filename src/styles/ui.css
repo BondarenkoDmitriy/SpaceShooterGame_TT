@@ -1,0 +1,61 @@
+.ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1; /* збільште цей значення, якщо потрібно, щоб UI був поверх канвасу */
+}
+
+.bullet {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  margin: 10px;
+}
+
+.comets {
+  position: absolute;
+  top: 5%;
+  left: 0;
+
+  margin: 10px;
+}
+
+.timer {
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  margin: 10px;
+}
+
+.gameStatus {
+  font-size: 12vw;
+
+  opacity: 0;
+
+  transition: opacity 0.5s ease;
+}
+
+.startGame {
+  width: 15vw;
+  aspect-ratio: 2;
+
+  font-size: 2.5vw;
+  font-weight: 600;
+
+  border: 0;
+  border-radius: 5%;
+
+  transition: transform 0.5s;
+}
+
+.startGame:active {
+  transform: scale(0.8);
+}
