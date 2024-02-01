@@ -11,15 +11,32 @@ export class Game {
 
     this.uiController = new UIController();
 
+    this.setBackground("../../Sprites/space.png");
+
     // this.createAsteroids();
     this.createRocket();
     this.asteroids = [];
     this.bullets = [];
 
+    this.bossHitCount = 0;
+    // this.initHealthBar();
+
     window.addEventListener('keydown', this.keysDown);
 
     // this.update();
   }
+
+  setBackground(imagePath) {
+    if (!this.backgroundTexture) {
+        this.backgroundTexture = PIXI.Texture.from(imagePath);
+        this.background = new PIXI.Sprite(this.backgroundTexture);
+        this.background.width = this.app.screen.width;
+        this.background.height = this.app.screen.height;
+        this.app.stage.addChild(this.background);
+    } else {
+        this.background.texture = PIXI.Texture.from(imagePath);
+    }
+}
 
   pushToStart() {
     this.createAsteroids();
@@ -45,14 +62,50 @@ export class Game {
   }
 
   createAsteroids() {
-    setInterval(() => {
+    this.asteroidInterval = setInterval(() => {
       this.createAsteroid();
     }, 1500)
+  }
+
+  stopAsteroids() {
+      clearInterval(this.asteroidInterval);
   }
 
   async createRocket() {
     this.rocket = new Rocket ("../Sprites/rocket.png", this.app.screen.width / 2, this.app.screen.height * 0.9, 0.07);
   }
+
+  createBoss() {
+    this.boss = new Character("../../Sprites/boss.png", Math.random() * Math.abs(this.app.screen.width) * 0.5, this.app.screen.height * 0.3, 0.25);
+   
+    // this.healthBarEmpty.classList.add('visible');
+    // this.boss.move(this.app.screen.width, this.app.screen.height * 0.3, 2);
+  }
+
+  // initHealthBar() {
+  //   this.healthBarEmpty = document.getElementById('healthBarStatusEmpty');
+  //   this.healthBarFull = document.getElementById('healthBarStatusFull');
+
+  //   this.maxBossHitCount = 4;
+  //   this.bossHitCount = 0;
+  //   this.initialHealthBarWidth = this.healthBarEmpty.offsetWidth;
+  //   this.healthBarFull.style.width = this.initialHealthBarWidth + 'px';
+  // }
+
+  // updateHealthBar() {
+  //   const healthPercentage = (this.maxBossHitCount - this.bossHitCount) / this.maxBossHitCount * 100;
+  //   const newWidth = this.initialHealthBarWidth * healthPercentage / 100;
+  //   this.healthBarFull.style.width = newWidth + 'px';
+  // }
+
+  // checkBossHit() {
+  //   this.bossHitCount++;
+  //   this.updateHealthBar();
+
+  //   if (this.bossHitCount >= this.maxBossHitCount) {
+  //     this.gameStatus('YOU WIN');
+  //   }
+  // }
 
   fireBullet() {
     if (this.uiController) {
@@ -113,7 +166,11 @@ collideWithAsteroid() {
     cometsElement.textContent = `Comets: 5/${updatedComets}`;
 
     if (updatedComets === 5) {
-      this.gameStatus('YOU WIN');
+      this.setBackground("../../Sprites/boss_location.png");
+
+      this.stopAsteroids();
+
+      this.createBoss();
     }
   };
 
@@ -135,16 +192,34 @@ collideWithAsteroid() {
 }
 
 collideWithBullet() {
-  this.bullets.forEach((bullet) => {
-    this.asteroids.forEach((asteroid, asteroidIndex) => {
+  for (let bulletIndex = this.bullets.length - 1; bulletIndex >= 0; bulletIndex--) {
+    const bullet = this.bullets[bulletIndex];
+    for (let asteroidIndex = this.asteroids.length - 1; asteroidIndex >= 0; asteroidIndex--) {
+      const asteroid = this.asteroids[asteroidIndex];
       if (this.isCollision(bullet, asteroid.obj)) {
         startGame.app.stage.removeChild(asteroid.obj);
         this.asteroids.splice(asteroidIndex, 1);
         startGame.app.stage.removeChild(bullet);
-        this.bullets.splice(this.bullets.indexOf(bullet), 1);
+        this.bullets.splice(bulletIndex, 1);
+        break;
       }
-    });
-  });
+    }
+
+    if (!bullet) continue;
+    if (this.boss && this.isCollision(bullet, this.boss.obj)) {
+      this.bossHitCount++;
+      startGame.app.stage.removeChild(bullet);
+      this.bullets.splice(bulletIndex, 1);
+
+      if (this.bossHitCount >= 4) {
+        startGame.app.stage.removeChild(this.boss.obj);
+        this.boss = null;
+        setTimeout(() => {
+          this.gameStatus('YOU WIN');
+        }, 500);
+      }
+    }
+  }
 }
 
 startCountdown() {
@@ -173,6 +248,7 @@ startCountdown() {
     this.app.ticker.add(() => {
       this.collideWithAsteroid();
       this.collideWithBullet();
+      // this.checkBossHit();
     });
   }
 }

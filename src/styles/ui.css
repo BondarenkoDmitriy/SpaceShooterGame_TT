@@ -59,3 +59,29 @@
 .startGame:active {
   transform: scale(0.8);
 }
+
+/* .bossHealth-bar--empty {
+  width: 18vw;
+  aspect-ratio: 4.5;
+  background-color: black;
+  background-size: 100% 100%;
+
+  opacity: 0;
+}
+
+.bossHealth-bar--full {
+  width: 100%;
+  height: 100%;
+  background-color: aqua;
+  background-repeat: no-repeat;
+  background-size: 18vw 100%;
+  background-position: left;
+  aspect-ratio: 5.5;
+  overflow: hidden;
+
+  transition: width 0, 25 ease-in-out;
+}
+
+.bossHealth-bar--empty.visible {
+  opacity: 1;
+} */

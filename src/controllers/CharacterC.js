@@ -17,8 +17,8 @@ export class Character {
     startGame.app.stage.addChild(this.obj);
   }
 
-  move(x, y, speed, cb = () => {}) {
-    startGame.app.ticker.add((delta) => {
+   move(x, y, speed, cb = () => {}) {
+     startGame.app.ticker.add((delta) => {
       if (Math.abs(this.obj.x - x) > 0.01) {
         this.obj.x += delta * speed;
       }
