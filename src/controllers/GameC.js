@@ -13,17 +13,15 @@ export class Game {
 
     this.setBackground("../../Sprites/space.png");
 
-    // this.createAsteroids();
     this.createRocket();
     this.asteroids = [];
     this.bullets = [];
+    this.countdownInterval = null;
 
     this.bossHitCount = 0;
     // this.initHealthBar();
 
     window.addEventListener('keydown', this.keysDown);
-
-    // this.update();
   }
 
   setBackground(imagePath) {
@@ -156,6 +154,8 @@ gameStatus(message) {
   }
 
   gameStatusElement.style.opacity = '1';
+
+  clearInterval(this.countdownInterval);
 }
 
 collideWithAsteroid() {
@@ -226,12 +226,12 @@ startCountdown() {
   let timeLeft = 60;
   const timerElement = document.getElementById('timer');
   
-  const countdownInterval = setInterval(() => {
+  this.countdownInterval = setInterval(() => {
     timeLeft--;
     timerElement.textContent = `Time: ${timeLeft}`;
     
     if (timeLeft <= 0) {
-      clearInterval(countdownInterval);
+      clearInterval(this.countdownInterval);
       this.gameStatus('YOU LOSE');
       return;
     }
