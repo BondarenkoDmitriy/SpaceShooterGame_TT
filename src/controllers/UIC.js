@@ -6,7 +6,7 @@ export class UIController {
   }
 
   updateBulletCount() {
-    this.bulletCountElement.textContent = `Score: 10/${this.bulletCount}`;
+    this.bulletCountElement.textContent = `Bullets: 10/${this.bulletCount}`;
   }
 
   decreaseBulletCount() {
