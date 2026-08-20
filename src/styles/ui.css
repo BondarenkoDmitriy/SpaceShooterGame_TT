@@ -4,85 +4,183 @@
   left: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+  user-select: none;
+}
+
+.hud-bar {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  right: 20px;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  z-index: 1; /* збільште цей значення, якщо потрібно, щоб UI був поверх канвасу */
+  gap: 15px;
+  pointer-events: auto;
 }
 
-.bullet {
-  position: absolute;
-  top: 0;
-  left: 0;
-
-  margin: 10px;
+.hud-item {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 0 8px rgba(0, 255, 204, 0.4);
 }
 
-.comets {
-  position: absolute;
-  top: 5%;
-  left: 0;
-
-  margin: 10px;
+.task-objective {
+  border-left: 4px solid #00ffcc;
+  color: #7dd3fc;
+  font-weight: 700;
 }
 
 .timer {
-  position: absolute;
-  top: 0;
-  right: 0;
-
-  margin: 10px;
+  border-right: 4px solid #f43f5e;
+  color: #fb7185;
 }
 
-.gameStatus {
-  font-size: 12vw;
+.bullet {
+  color: #facc15;
+}
 
-  opacity: 0;
-
-  transition: opacity 0.5s ease;
+.comets {
+  color: #a7f3d0;
 }
 
 .startGame {
-  width: 15vw;
-  aspect-ratio: 3;
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 18px 48px;
+  font-size: 28px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(124, 58, 237, 0.6);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
 
-  font-size: 2.5vw;
-  font-weight: 600;
-
-  border: 2px solid black;
-  border-radius: 5%;
-  background-color: rgba(255, 255, 255, 0.5);
-
-  transition: transform 0.5s;
+.startGame:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  box-shadow: 0 0 35px rgba(124, 58, 237, 0.9);
 }
 
 .startGame:active {
-  transform: scale(0.8);
+  transform: translate(-50%, -50%) scale(0.95);
 }
 
-/* .bossHealth-bar--empty {
-  width: 18vw;
-  aspect-ratio: 4.5;
-  background-color: black;
-  background-size: 100% 100%;
-
-  opacity: 0;
+/* Modal Overlay Styling */
+.modal-overlay {
+  pointer-events: auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 7, 15, 0.75);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-.bossHealth-bar--full {
-  width: 100%;
-  height: 100%;
-  background-color: aqua;
-  background-repeat: no-repeat;
-  background-size: 18vw 100%;
-  background-position: left;
-  aspect-ratio: 5.5;
-  overflow: hidden;
-
-  transition: width 0, 25 ease-in-out;
+.modal-content {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(59, 130, 246, 0.3);
+  border-radius: 16px;
+  padding: 40px 50px;
+  text-align: center;
+  max-width: 440px;
+  width: 90%;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-.bossHealth-bar--empty.visible {
-  opacity: 1;
-} */
+.modal-title {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.modal-title.win {
+  color: #34d399;
+  text-shadow: 0 0 15px rgba(52, 211, 153, 0.6);
+}
+
+.modal-title.lose {
+  color: #f87171;
+  text-shadow: 0 0 15px rgba(248, 113, 113, 0.6);
+}
+
+.modal-desc {
+  font-size: 18px;
+  color: #cbd5e1;
+  margin-bottom: 30px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 14px 28px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.modal-btn.primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.modal-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
+.modal-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

@@ -2,8 +2,9 @@ import { Game } from './controllers/GameC';
 
 export const startGame = new Game();
 
-document.querySelector('.startGame').addEventListener('click', () => {
-  startGame.pushToStart();
-
-  document.querySelector('.startGame').style.display = 'none';
-});
+const startBtn = document.getElementById('startGameBtn');
+if (startBtn) {
+  startBtn.addEventListener('click', () => {
+    startGame.pushToStart();
+  });
+}

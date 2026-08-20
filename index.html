@@ -5,20 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./src/style.css">
   <link rel="stylesheet" href="./src/styles/ui.css">
-  <title>SpaceShooter_TT</title>
+  <title>Space Shooter</title>
 </head>
 <body>
-  <div class="ui">
-    <div class="bullet">Bullet: 10/10</div>
-    <div class="comets">Comets: 5/0</div>
-    <div class="timer" id="timer">Time: 60</div>
-    <div class="gameStatus">Game Over</div>
-    <button class="startGame">Start Game</button>
-    <!-- <div class="bossHealth-bar--empty" id="healthBarStatusEmpty">
-      <div id="healthBarStatusFull" class="bossHealth-bar--full"></div>
-    </div> -->
+  <div id="game-wrapper">
+    <div class="ui">
+      <div class="hud-bar">
+        <div class="hud-item task-objective" id="taskObjective">Level 1: Destroy 5 Asteroids</div>
+        <div class="hud-item bullet" id="bulletCount">Bullets: 10/10</div>
+        <div class="hud-item comets" id="cometCount">Asteroids: 0/5</div>
+        <div class="hud-item timer" id="timer">Time: 60s</div>
+      </div>
+
+      <button class="startGame" id="startGameBtn">Start Game</button>
+
+      <div class="modal-overlay" id="endGameModal" style="display: none;">
+        <div class="modal-content">
+          <h2 id="modalTitle" class="modal-title">GAME OVER</h2>
+          <p id="modalDesc" class="modal-desc">Mission Failed</p>
+          <div class="modal-buttons">
+            <button id="btnTryAgain" class="modal-btn primary">Try Again</button>
+            <button id="btnQuit" class="modal-btn secondary">Quit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="GameContainer"></div>
   </div>
-  <div id="GameContainer"></div>
   <script type="module" src="./src/index.js"></script>
 </body>
 </html>
