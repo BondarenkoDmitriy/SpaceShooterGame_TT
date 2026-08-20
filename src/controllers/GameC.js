@@ -1,18 +1,22 @@
 import * as PIXI from 'pixi.js';
-import { Character } from './CharacterC';
-import { Rocket } from './RocketC';
-import { UIController } from './UIC';
+import { GAME_CONFIG } from '../config/GameConfig.js';
+import { Rocket } from '../entities/Rocket.js';
+import { Asteroid } from '../entities/Asteroid.js';
+import { Boss } from '../entities/Boss.js';
+import { Bullet } from '../entities/Bullet.js';
+import { Explosion } from '../entities/Explosion.js';
+import { UIController } from './UIC.js';
 
 export class Game {
   constructor() {
     this.app = new PIXI.Application({
-      width: 1280,
-      height: 720,
+      width: GAME_CONFIG.CANVAS_WIDTH,
+      height: GAME_CONFIG.CANVAS_HEIGHT,
       backgroundColor: 0x05070f,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
     });
-    
+
     const container = document.getElementById('GameContainer');
     if (container) {
       container.appendChild(this.app.view);
@@ -20,10 +24,11 @@ export class Game {
 
     this.uiController = new UIController();
 
-    // Background TilingSprite for continuous scrolling
-    this.spaceTexture = PIXI.Texture.from("Sprites/space.png");
-    this.bossLocationTexture = PIXI.Texture.from("Sprites/boss_location.png");
+    // Textures
+    this.spaceTexture = PIXI.Texture.from('Sprites/space.png');
+    this.bossLocationTexture = PIXI.Texture.from('Sprites/boss_location.png');
 
+    // Tiling Background
     this.background = new PIXI.TilingSprite(
       this.spaceTexture,
       this.app.screen.width,
@@ -31,38 +36,31 @@ export class Game {
     );
     this.app.stage.addChild(this.background);
 
-    // Main game state
+    // Game state
     this.gameActive = false;
     this.currentLevel = 1;
-    this.remainingBullets = 10;
+    this.remainingBullets = GAME_CONFIG.MAX_BULLETS;
     this.cometsHit = 0;
     this.totalCometsSpawned = 0;
-    this.bossHP = 4;
-    this.maxBossHP = 4;
-    this.timeLeft = 60;
+    this.timeLeft = GAME_CONFIG.LEVEL_TIME_LIMIT;
 
     this.asteroids = [];
     this.playerBullets = [];
     this.bossBullets = [];
+    this.explosions = [];
     this.boss = null;
-    this.bossDirection = 1; // 1 for right, -1 for left
-    this.bossSpeed = 2.5;
-
-    this.bossHealthBarContainer = null;
-    this.bossHealthBarFill = null;
-
+    this.rocket = null;
     this.statusText = null;
 
-    // Listeners and tickers
+    // Shooting listener
     this.onKeyDown = (e) => {
       if (e.code === 'Space') {
         this.fireBullet();
       }
     };
-
     window.addEventListener('keydown', this.onKeyDown);
 
-    // Bind ticker
+    // Main Loop Ticker
     this.app.ticker.add((delta) => this.gameLoop(delta));
   }
 
@@ -82,31 +80,22 @@ export class Game {
     this.gameActive = false;
     this.clearTimers();
 
-    // Clear stage objects except background
+    // Destroy entities
     this.asteroids.forEach((ast) => ast.destroy());
     this.asteroids = [];
 
-    this.playerBullets.forEach((b) => {
-      if (b.parent) b.parent.removeChild(b);
-      b.destroy();
-    });
+    this.playerBullets.forEach((b) => b.destroy());
     this.playerBullets = [];
 
-    this.bossBullets.forEach((b) => {
-      if (b.parent) b.parent.removeChild(b);
-      b.destroy();
-    });
+    this.bossBullets.forEach((b) => b.destroy());
     this.bossBullets = [];
+
+    this.explosions.forEach((ex) => ex.destroy());
+    this.explosions = [];
 
     if (this.boss) {
       this.boss.destroy();
       this.boss = null;
-    }
-
-    if (this.bossHealthBarContainer && this.bossHealthBarContainer.parent) {
-      this.bossHealthBarContainer.parent.removeChild(this.bossHealthBarContainer);
-      this.bossHealthBarContainer.destroy({ children: true });
-      this.bossHealthBarContainer = null;
     }
 
     if (this.rocket) {
@@ -120,21 +109,20 @@ export class Game {
       this.statusText = null;
     }
 
-    // Reset background texture to Level 1 space
+    // Reset background texture
     this.background.texture = this.spaceTexture;
 
     // Reset stats
     this.currentLevel = 1;
-    this.remainingBullets = 10;
+    this.remainingBullets = GAME_CONFIG.MAX_BULLETS;
     this.cometsHit = 0;
     this.totalCometsSpawned = 0;
-    this.bossHP = 4;
-    this.timeLeft = 60;
+    this.timeLeft = GAME_CONFIG.LEVEL_TIME_LIMIT;
 
-    this.uiController.setTask("Level 1: Destroy 5 Asteroids");
-    this.uiController.setBullets(10);
-    this.uiController.setAsteroids(0, 5);
-    this.uiController.setTimer(60);
+    this.uiController.setTask(`Level 1: Destroy ${GAME_CONFIG.LEVEL_1_TARGET} Asteroids`);
+    this.uiController.setBullets(GAME_CONFIG.MAX_BULLETS);
+    this.uiController.setAsteroids(0, GAME_CONFIG.LEVEL_1_TARGET);
+    this.uiController.setTimer(GAME_CONFIG.LEVEL_TIME_LIMIT);
   }
 
   clearTimers() {
@@ -146,7 +134,7 @@ export class Game {
   createRocket() {
     this.rocket = new Rocket(
       this.app,
-      "Sprites/rocket.png",
+      'Sprites/rocket.png',
       this.app.screen.width / 2,
       this.app.screen.height * 0.88,
       0.07
@@ -156,23 +144,22 @@ export class Game {
   startLevel1() {
     this.startCountdown();
     this.asteroidInterval = setInterval(() => {
-      if (this.gameActive && this.currentLevel === 1 && this.totalCometsSpawned < 5) {
+      if (this.gameActive && this.currentLevel === 1 && this.totalCometsSpawned < GAME_CONFIG.LEVEL_1_TARGET) {
         this.createAsteroid();
       }
     }, 1500);
-    // Spawn first asteroid immediately
+
     this.createAsteroid();
   }
 
   createAsteroid() {
-    if (this.totalCometsSpawned >= 5) return;
+    if (this.totalCometsSpawned >= GAME_CONFIG.LEVEL_1_TARGET) return;
     this.totalCometsSpawned++;
 
     const padding = 60;
     const spawnX = padding + Math.random() * (this.app.screen.width - padding * 2);
     const spawnY = -40;
-    const asteroid = new Character(this.app, "Sprites/comet.png", spawnX, spawnY, 0.12);
-    asteroid.speedY = 2 + Math.random() * 1.5;
+    const asteroid = new Asteroid(this.app, spawnX, spawnY);
     this.asteroids.push(asteroid);
   }
 
@@ -180,159 +167,63 @@ export class Game {
     this.currentLevel = 2;
     this.clearTimers();
 
-    // Remove active asteroids
+    // Clear remaining asteroids
     this.asteroids.forEach((ast) => ast.destroy());
     this.asteroids = [];
 
-    // Reset bullets and timer for Level 2
-    this.remainingBullets = 10;
-    this.timeLeft = 60;
+    // Refill ammo & reset timer
+    this.remainingBullets = GAME_CONFIG.MAX_BULLETS;
+    this.timeLeft = GAME_CONFIG.LEVEL_TIME_LIMIT;
 
-    // Switch background texture seamlessly
+    // Switch background texture
     this.background.texture = this.bossLocationTexture;
 
     // Update UI HUD
-    this.uiController.setTask("Level 2: Defeat the Boss");
-    this.uiController.setBullets(10);
-    this.uiController.setBossHP(4, 4);
-    this.uiController.setTimer(60);
+    this.uiController.setTask('Level 2: Defeat the Boss');
+    this.uiController.setBullets(GAME_CONFIG.MAX_BULLETS);
+    this.uiController.setBossHP(GAME_CONFIG.BOSS_MAX_HP, GAME_CONFIG.BOSS_MAX_HP);
+    this.uiController.setTimer(GAME_CONFIG.LEVEL_TIME_LIMIT);
 
-    // Show temporary Level 2 banner text
-    this.showBanner("LEVEL 2: BOSS BATTLE!");
-
-    // Create Boss & HP Bar
+    this.showBanner('LEVEL 2: BOSS BATTLE!');
     this.createBoss();
-
-    // Start Level 2 countdown timer
     this.startCountdown();
 
-    // Start Boss Shooting Interval (every 2.0 seconds)
+    // Boss shooting loop
     this.bossShootInterval = setInterval(() => {
-      if (this.gameActive && this.boss) {
+      if (this.gameActive && this.boss && !this.boss.isDestroyed) {
         this.fireBossBullet();
       }
-    }, 2000);
+    }, GAME_CONFIG.BOSS_SHOOT_INTERVAL_MS);
   }
 
   createBoss() {
-    this.boss = new Character(
-      this.app,
-      "Sprites/Boss.png",
-      this.app.screen.width / 2,
-      130,
-      0.25
-    );
-    this.bossHP = 4;
-    this.bossDirection = 1;
-
-    this.createBossHealthBar();
-  }
-
-  createBossHealthBar() {
-    if (this.bossHealthBarContainer) {
-      if (this.bossHealthBarContainer.parent) {
-        this.bossHealthBarContainer.parent.removeChild(this.bossHealthBarContainer);
-      }
-      this.bossHealthBarContainer.destroy({ children: true });
-    }
-
-    this.bossHealthBarContainer = new PIXI.Container();
-
-    const width = 140;
-    const height = 16;
-
-    // Dark background container with red border
-    const bg = new PIXI.Graphics();
-    bg.beginFill(0x111827, 0.95);
-    bg.lineStyle(2, 0xff2244, 1);
-    bg.drawRoundedRect(-width / 2, -height / 2, width, height, 4);
-    bg.endFill();
-
-    // Red fill bar graphics
-    this.bossHealthBarFill = new PIXI.Graphics();
-    this.updateHealthBarGraphics();
-
-    this.bossHealthBarContainer.addChild(bg);
-    this.bossHealthBarContainer.addChild(this.bossHealthBarFill);
-
-    this.app.stage.addChild(this.bossHealthBarContainer);
-  }
-
-  updateHealthBarGraphics() {
-    if (!this.bossHealthBarFill) return;
-    this.bossHealthBarFill.clear();
-
-    const totalWidth = 136;
-    const height = 12;
-    const hpRatio = Math.max(0, this.bossHP / this.maxBossHP);
-    const fillWidth = totalWidth * hpRatio;
-
-    if (fillWidth > 0) {
-      // Red Bar Fill
-      this.bossHealthBarFill.beginFill(0xff0044, 1);
-      this.bossHealthBarFill.drawRoundedRect(-totalWidth / 2, -height / 2, fillWidth, height, 2);
-      this.bossHealthBarFill.endFill();
-
-      // Top Highlight for polished 3D bar look
-      this.bossHealthBarFill.beginFill(0xff6688, 0.6);
-      this.bossHealthBarFill.drawRoundedRect(-totalWidth / 2, -height / 2, fillWidth, height / 3, 2);
-      this.bossHealthBarFill.endFill();
-
-      // Draw 4 distinct tick marks to show 4 hits remaining
-      this.bossHealthBarFill.lineStyle(1.5, 0x0f172a, 0.8);
-      for (let i = 1; i < 4; i++) {
-        const tickX = -totalWidth / 2 + (totalWidth / 4) * i;
-        if (tickX < -totalWidth / 2 + fillWidth) {
-          this.bossHealthBarFill.moveTo(tickX, -height / 2);
-          this.bossHealthBarFill.lineTo(tickX, height / 2);
-        }
-      }
-    }
+    this.boss = new Boss(this.app, this.app.screen.width / 2, 130);
   }
 
   fireBullet() {
-    if (!this.gameActive || this.remainingBullets <= 0 || !this.rocket) return;
+    if (!this.gameActive || this.remainingBullets <= 0 || !this.rocket || this.rocket.isDestroyed) return;
 
     this.remainingBullets--;
     this.uiController.setBullets(this.remainingBullets);
 
-    // Create PIXI.Graphics laser projectile as specified in PDF
-    const bullet = new PIXI.Graphics();
-    
-    // Glowing Laser beam
-    bullet.beginFill(0x00ffff, 0.5);
-    bullet.drawRoundedRect(-4, -12, 8, 24, 4);
-    bullet.endFill();
-    bullet.beginFill(0xffffff, 1);
-    bullet.drawRoundedRect(-2, -10, 4, 20, 2);
-    bullet.endFill();
-
-    bullet.x = this.rocket.obj.x;
-    bullet.y = this.rocket.obj.y - this.rocket.obj.height / 2;
-
-    this.app.stage.addChild(bullet);
+    const bullet = new Bullet(
+      this.app,
+      this.rocket.x,
+      this.rocket.y - this.rocket.height / 2,
+      false
+    );
     this.playerBullets.push(bullet);
   }
 
   fireBossBullet() {
-    if (!this.boss || !this.boss.obj) return;
+    if (!this.boss || this.boss.isDestroyed) return;
 
-    // Create PIXI.Graphics red plasma projectile for Boss
-    const bullet = new PIXI.Graphics();
-    bullet.beginFill(0xff0055, 0.4);
-    bullet.drawCircle(0, 0, 10);
-    bullet.endFill();
-    bullet.beginFill(0xff3300, 1);
-    bullet.drawCircle(0, 0, 6);
-    bullet.endFill();
-    bullet.beginFill(0xffffff, 1);
-    bullet.drawCircle(0, 0, 3);
-    bullet.endFill();
-
-    bullet.x = this.boss.obj.x;
-    bullet.y = this.boss.obj.y + this.boss.obj.height / 2;
-
-    this.app.stage.addChild(bullet);
+    const bullet = new Bullet(
+      this.app,
+      this.boss.x,
+      this.boss.y + this.boss.height / 2,
+      true
+    );
     this.bossBullets.push(bullet);
   }
 
@@ -353,8 +244,8 @@ export class Game {
 
   isCollision(obj1, obj2) {
     if (!obj1 || !obj2) return false;
-    const bounds1 = obj1.getBounds();
-    const bounds2 = obj2.getBounds();
+    const bounds1 = typeof obj1.getBounds === 'function' ? obj1.getBounds() : obj1;
+    const bounds2 = typeof obj2.getBounds === 'function' ? obj2.getBounds() : obj2;
 
     return (
       bounds1.x < bounds2.x + bounds2.width &&
@@ -365,163 +256,166 @@ export class Game {
   }
 
   gameLoop(delta) {
-    // 1. Continuous background scrolling
-    this.background.tilePosition.y += 1.5 * (delta || 1);
+    // 1. Tiling background scroll
+    this.background.tilePosition.y += GAME_CONFIG.BACKGROUND_SCROLL_SPEED * (delta || 1);
 
     if (!this.gameActive) return;
 
-    // 2. Boss movement & HP bar tracking
-    if (this.currentLevel === 2 && this.boss && this.boss.obj) {
-      this.boss.obj.x += this.bossSpeed * this.bossDirection * (delta || 1);
+    // Update Player Rocket
+    if (this.rocket && !this.rocket.isDestroyed) {
+      this.rocket.update(delta);
+    }
 
-      const margin = 120;
-      if (this.boss.obj.x > this.app.screen.width - margin) {
-        this.boss.obj.x = this.app.screen.width - margin;
-        this.bossDirection = -1;
-      } else if (this.boss.obj.x < margin) {
-        this.boss.obj.x = margin;
-        this.bossDirection = 1;
-      }
+    // Update Boss AI & Healthbar
+    if (this.currentLevel === 2 && this.boss && !this.boss.isDestroyed) {
+      this.boss.update(delta);
+    }
 
-      if (this.bossHealthBarContainer) {
-        this.bossHealthBarContainer.x = this.boss.obj.x;
-        this.bossHealthBarContainer.y = this.boss.obj.y - this.boss.obj.height / 2 - 25;
+    // Update Explosions
+    for (let i = this.explosions.length - 1; i >= 0; i--) {
+      const active = this.explosions[i].update(delta);
+      if (!active) {
+        this.explosions.splice(i, 1);
       }
     }
 
-    // 3. Move Asteroids
+    // Update Asteroids & check collisions
     for (let i = this.asteroids.length - 1; i >= 0; i--) {
       const ast = this.asteroids[i];
-      if (ast.obj) {
-        ast.obj.y += (ast.speedY || 2.5) * (delta || 1);
+      if (ast && !ast.isDestroyed) {
+        ast.update(delta);
 
-        // Rocket collision with Asteroid
-        if (this.rocket && this.isCollision(this.rocket.obj, ast.obj)) {
-          this.endGame(false, "Ship destroyed by asteroid!");
+        // Rocket vs Asteroid Collision
+        if (this.rocket && !this.rocket.isDestroyed && this.isCollision(this.rocket, ast)) {
+          this.createExplosion(this.rocket.x, this.rocket.y);
+          this.endGame(false, 'Ship destroyed by asteroid!');
           return;
         }
 
-        // Out of bounds off bottom screen
-        if (ast.obj.y > this.app.screen.height + 50) {
+        // Out of bounds
+        if (ast.isOutOfBounds()) {
           ast.destroy();
           this.asteroids.splice(i, 1);
         }
       }
     }
 
-    // 4. Move Player Bullets
+    // Update Player Bullets & check collisions
     for (let i = this.playerBullets.length - 1; i >= 0; i--) {
       const bullet = this.playerBullets[i];
-      bullet.y -= 10 * (delta || 1);
+      if (bullet && !bullet.isDestroyed) {
+        bullet.update(delta);
 
-      let bulletRemoved = false;
+        let bulletRemoved = false;
 
-      // Player Bullet vs Asteroids
-      if (this.currentLevel === 1) {
-        for (let j = this.asteroids.length - 1; j >= 0; j--) {
-          const ast = this.asteroids[j];
-          if (this.isCollision(bullet, ast.obj)) {
-            // Destroy both
-            ast.destroy();
-            this.asteroids.splice(j, 1);
+        // Player Bullet vs Asteroid
+        if (this.currentLevel === 1) {
+          for (let j = this.asteroids.length - 1; j >= 0; j--) {
+            const ast = this.asteroids[j];
+            if (ast && !ast.isDestroyed && this.isCollision(bullet, ast)) {
+              this.createExplosion(ast.x, ast.y);
+              ast.destroy();
+              this.asteroids.splice(j, 1);
 
-            this.app.stage.removeChild(bullet);
+              bullet.destroy();
+              this.playerBullets.splice(i, 1);
+              bulletRemoved = true;
+
+              this.cometsHit++;
+              this.uiController.setAsteroids(this.cometsHit, GAME_CONFIG.LEVEL_1_TARGET);
+
+              if (this.cometsHit >= GAME_CONFIG.LEVEL_1_TARGET) {
+                this.startLevel2();
+                return;
+              }
+              break;
+            }
+          }
+        }
+
+        if (bulletRemoved) continue;
+
+        // Player Bullet vs Boss Bullet
+        for (let k = this.bossBullets.length - 1; k >= 0; k--) {
+          const bossBullet = this.bossBullets[k];
+          if (bossBullet && !bossBullet.isDestroyed && this.isCollision(bullet, bossBullet)) {
+            this.createExplosion(bullet.x, bullet.y, 0.15);
             bullet.destroy();
             this.playerBullets.splice(i, 1);
+
+            bossBullet.destroy();
+            this.bossBullets.splice(k, 1);
+
             bulletRemoved = true;
-
-            this.cometsHit++;
-            this.uiController.setAsteroids(this.cometsHit, 5);
-
-            if (this.cometsHit >= 5) {
-              this.startLevel2();
-              return;
-            }
             break;
           }
         }
-      }
 
-      if (bulletRemoved) continue;
+        if (bulletRemoved) continue;
 
-      // Player Bullet vs Boss Bullets
-      for (let k = this.bossBullets.length - 1; k >= 0; k--) {
-        const bossBullet = this.bossBullets[k];
-        if (this.isCollision(bullet, bossBullet)) {
-          this.app.stage.removeChild(bullet);
-          bullet.destroy();
-          this.playerBullets.splice(i, 1);
+        // Player Bullet vs Boss
+        if (this.currentLevel === 2 && this.boss && !this.boss.isDestroyed) {
+          if (this.isCollision(bullet, this.boss)) {
+            this.createExplosion(bullet.x, bullet.y, 0.2);
+            bullet.destroy();
+            this.playerBullets.splice(i, 1);
 
-          this.app.stage.removeChild(bossBullet);
-          bossBullet.destroy();
-          this.bossBullets.splice(k, 1);
+            const isDead = this.boss.takeDamage(1);
+            this.uiController.setBossHP(this.boss.hp, GAME_CONFIG.BOSS_MAX_HP);
 
-          bulletRemoved = true;
-          break;
-        }
-      }
-
-      if (bulletRemoved) continue;
-
-      // Player Bullet vs Boss
-      if (this.currentLevel === 2 && this.boss && this.boss.obj) {
-        if (this.isCollision(bullet, this.boss.obj)) {
-          this.app.stage.removeChild(bullet);
-          bullet.destroy();
-          this.playerBullets.splice(i, 1);
-
-          this.bossHP--;
-          this.updateHealthBarGraphics();
-          this.uiController.setBossHP(this.bossHP, 4);
-
-          if (this.bossHP <= 0) {
-            this.boss.destroy();
-            this.boss = null;
-            if (this.bossHealthBarContainer) {
-              this.app.stage.removeChild(this.bossHealthBarContainer);
+            if (isDead) {
+              this.createExplosion(this.boss.x, this.boss.y, 0.5);
+              this.boss.destroy();
+              this.boss = null;
+              this.endGame(true, 'Victory! Boss Defeated!');
+              return;
             }
-            this.endGame(true, "Victory! Boss Defeated!");
-            return;
+            continue;
           }
-          continue;
         }
-      }
 
-      // Remove bullet if out of screen top
-      if (bullet.y < -20) {
-        this.app.stage.removeChild(bullet);
-        bullet.destroy();
-        this.playerBullets.splice(i, 1);
+        // Out of bounds
+        if (bullet.isOutOfBounds()) {
+          bullet.destroy();
+          this.playerBullets.splice(i, 1);
+        }
       }
     }
 
-    // 5. Move Boss Bullets
+    // Update Boss Bullets & check collisions
     for (let i = this.bossBullets.length - 1; i >= 0; i--) {
       const bossBullet = this.bossBullets[i];
-      bossBullet.y += 6 * (delta || 1);
+      if (bossBullet && !bossBullet.isDestroyed) {
+        bossBullet.update(delta);
 
-      // Boss Bullet vs Player Rocket
-      if (this.rocket && this.isCollision(bossBullet, this.rocket.obj)) {
-        this.endGame(false, "Ship destroyed by Boss laser!");
-        return;
-      }
+        // Boss Bullet vs Player Rocket
+        if (this.rocket && !this.rocket.isDestroyed && this.isCollision(bossBullet, this.rocket)) {
+          this.createExplosion(this.rocket.x, this.rocket.y);
+          this.endGame(false, 'Ship destroyed by Boss laser!');
+          return;
+        }
 
-      // Out of bounds bottom
-      if (bossBullet.y > this.app.screen.height + 20) {
-        this.app.stage.removeChild(bossBullet);
-        bossBullet.destroy();
-        this.bossBullets.splice(i, 1);
+        // Out of bounds
+        if (bossBullet.isOutOfBounds()) {
+          bossBullet.destroy();
+          this.bossBullets.splice(i, 1);
+        }
       }
     }
 
-    // 6. Check Out of Bullets loss condition
+    // Out of ammo check
     if (this.remainingBullets === 0 && this.playerBullets.length === 0) {
-      if (this.currentLevel === 1 && this.cometsHit < 5) {
-        this.endGame(false, "Out of ammunition!");
-      } else if (this.currentLevel === 2 && this.bossHP > 0) {
-        this.endGame(false, "Out of ammunition!");
+      if (this.currentLevel === 1 && this.cometsHit < GAME_CONFIG.LEVEL_1_TARGET) {
+        this.endGame(false, 'Out of ammunition!');
+      } else if (this.currentLevel === 2 && this.boss && this.boss.hp > 0) {
+        this.endGame(false, 'Out of ammunition!');
       }
     }
+  }
+
+  createExplosion(x, y, scale = 0.25) {
+    const ex = new Explosion(this.app, x, y, scale);
+    this.explosions.push(ex);
   }
 
   showBanner(message) {
@@ -554,7 +448,6 @@ export class Game {
     this.gameActive = false;
     this.clearTimers();
 
-    // Create PIXI.Text for YOU WIN / YOU LOSE as strictly specified in PDF
     const textString = isWin ? 'YOU WIN' : 'YOU LOSE';
     const textColor = isWin ? ['#34d399', '#059669'] : ['#f87171', '#dc2626'];
 
@@ -582,19 +475,17 @@ export class Game {
 
     this.app.stage.addChild(this.statusText);
 
-    // Show HTML Modal overlay after brief delay for modal selection
     setTimeout(() => {
       this.uiController.showEndModal(
         isWin,
-        isWin ? "VICTORY!" : "GAME OVER",
+        isWin ? 'VICTORY!' : 'GAME OVER',
         description,
-        () => this.pushToStart(), // Try Again
+        () => this.pushToStart(),
         () => {
           this.resetGame();
-          this.uiController.showStartButton(true); // Quit
+          this.uiController.showStartButton(true);
         }
       );
     }, 600);
   }
 }
-
