@@ -21,8 +21,8 @@ export class Game {
     this.uiController = new UIController();
 
     // Background TilingSprite for continuous scrolling
-    this.spaceTexture = PIXI.Texture.from("../../Sprites/space.png");
-    this.bossLocationTexture = PIXI.Texture.from("../../Sprites/boss_location.png");
+    this.spaceTexture = PIXI.Texture.from("Sprites/space.png");
+    this.bossLocationTexture = PIXI.Texture.from("Sprites/boss_location.png");
 
     this.background = new PIXI.TilingSprite(
       this.spaceTexture,
@@ -146,7 +146,7 @@ export class Game {
   createRocket() {
     this.rocket = new Rocket(
       this.app,
-      "../../Sprites/rocket.png",
+      "Sprites/rocket.png",
       this.app.screen.width / 2,
       this.app.screen.height * 0.88,
       0.07
@@ -171,7 +171,7 @@ export class Game {
     const padding = 60;
     const spawnX = padding + Math.random() * (this.app.screen.width - padding * 2);
     const spawnY = -40;
-    const asteroid = new Character(this.app, "../../Sprites/comet.png", spawnX, spawnY, 0.12);
+    const asteroid = new Character(this.app, "Sprites/comet.png", spawnX, spawnY, 0.12);
     asteroid.speedY = 2 + Math.random() * 1.5;
     this.asteroids.push(asteroid);
   }
@@ -217,7 +217,7 @@ export class Game {
   createBoss() {
     this.boss = new Character(
       this.app,
-      "../../Sprites/boss.png",
+      "Sprites/boss.png",
       this.app.screen.width / 2,
       130,
       0.25
