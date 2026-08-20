@@ -217,7 +217,7 @@ export class Game {
   createBoss() {
     this.boss = new Character(
       this.app,
-      "Sprites/boss.png",
+      "Sprites/Boss.png",
       this.app.screen.width / 2,
       130,
       0.25
