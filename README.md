@@ -10,13 +10,15 @@ You have 60 seconds and 10 bullets for everything.
 1. Clone the project repository to your computer:
   git clone https://github.com/BondarenkoDmitriy/SpaceShooterGame_TT.git
 
-2. Open a terminal or command prompt and navigate to the project folder:
+  Demo: [Click to play](https://space-shooter-game-tt-2cv4.vercel.app)
+
+3. Open a terminal or command prompt and navigate to the project folder:
   cd SpaceShooterGame_TT
 
-3. Install dependencies by executing the following command:
+4. Install dependencies by executing the following command:
     - npm i
 
-4. Run the game by running the following command::
+5. Run the game by running the following command::
   npm start
 
 ## Walkthrough
